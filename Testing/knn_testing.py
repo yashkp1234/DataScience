@@ -1,6 +1,6 @@
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
-from KNearestNeighbours.k_nearest_neighbours import KNearestNeighbours
+from Classifiers.k_nearest_neighbours import KNearestNeighbours
 
 # Iris Dataset test
 iris = datasets.load_iris()

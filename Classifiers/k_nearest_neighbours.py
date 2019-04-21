@@ -44,24 +44,23 @@ class KNearestNeighbours:
 
     # Retrieve the K nearest neighbours
     def __k_nearest_neighbours(self, test_sample):
-        scores = [[self.__distance(row[1], test_sample), row[0]] for row in zip(self.__train_labels, self.__train_features)]
+        scores = [[self.__distance(row[1], test_sample), row[0]]
+                  for row in zip(self.__train_labels, self.__train_features)]
         scores.sort(key=lambda x: x[0])
         self.__scores = scores
         return self.__scores[:self.__k]
 
     # Fit the training data on to the model
     def fit(self, train_features, train_labels):
-        self.__train_features = list(train_features)
-        self.__train_labels = list(train_labels)
+        self.__train_features, self.__train_labels = list(train_features), list(train_labels)
 
     # Predict results for inputted test samples
     def predict(self, test_features, test_labels):
         if not self.__train_features or not self.__train_labels:
             raise Exception("Training Data not fitted.")
 
-        self.__test_features = list(test_features)
-        self.__test_labels = list(test_labels)
-        neighbours_list = [self.__k_nearest_neighbours(row) for row in test_features]
+        self.__test_features, self.__test_labels = list(test_features), list(test_labels)
+        neighbours_list = [self.__k_nearest_neighbours(row) for row in self.__test_features]
         self.__predictions = [get_prediction(neighbours) for neighbours in neighbours_list]
         return self.__predictions
 
@@ -76,7 +75,8 @@ class KNearestNeighbours:
         for prediction, result in zip(self.__predictions, self.__test_labels):
             if prediction == result:
                 count += 1
-        confusion_matrix = pd.crosstab(pd.Series(self.__predictions, name="Predicted"), pd.Series(self.__test_labels, name="Actual"))
+        confusion_matrix = pd.crosstab(pd.Series(self.__predictions, name="Predicted"),
+                                       pd.Series(self.__test_labels, name="Actual"))
         print("Accuracy: {0:.2f}%".format(count / len(self.__test_labels) * 100))
         print(confusion_matrix, "\n")
 
