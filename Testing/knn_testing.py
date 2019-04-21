@@ -7,7 +7,7 @@ iris = datasets.load_iris()
 features = iris.data
 target = [iris.target_names[int(target)] for target in iris.target]
 
-X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=3, stratify=target)
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=3)
 
 knn = KNearestNeighbours(k=5)
 knn.fit(X_train, y_train)
@@ -20,7 +20,7 @@ digits = datasets.load_digits()
 features = digits.data
 target = digits.target
 
-X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=3, stratify=target)
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=3)
 
 knn = KNearestNeighbours(k=5, calc_method="manhattan")
 knn.fit(X_train, y_train)

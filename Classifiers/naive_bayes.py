@@ -70,6 +70,7 @@ class NaiveBayes:
         self.__predictions = []
         self.__test_features, self.__test_labels = list(test_features), list(test_labels)
         self.calculate_probabilities_and_predict()
+        return self.__predictions
 
     # Output score which includes accuracy and confusion matrix
     def score(self):

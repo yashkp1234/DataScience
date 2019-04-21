@@ -7,7 +7,7 @@ iris = datasets.load_iris()
 features = iris.data
 target = [iris.target_names[int(target)] for target in iris.target]
 
-X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=3, stratify=target)
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=3)
 
 nb = NaiveBayes()
 nb.fit(X_train, y_train)
@@ -20,7 +20,7 @@ wine = datasets.load_wine()
 features = wine.data
 target = [wine.target_names[int(target)] for target in wine.target]
 
-X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=3, stratify=target)
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=3)
 
 nb = NaiveBayes()
 nb.fit(X_train, y_train)
