@@ -56,7 +56,7 @@ class KNearestNeighbours:
 
     # Predict results for inputted test samples
     def predict(self, test_features, test_labels):
-        if not self.__train_features or not self.__train_labels:
+        if self.__train_features is None or self.__train_labels is None:
             raise Exception("Training Data not fitted.")
 
         self.__test_features, self.__test_labels = list(test_features), list(test_labels)
@@ -66,9 +66,9 @@ class KNearestNeighbours:
 
     # Output score which includes accuracy and confusion matrix
     def score(self):
-        if not self.__train_features or not self.__train_labels:
-            raise Exception("Training data not fitted.")
-        if not self.__test_labels or not self.__test_features:
+        if self.__train_features is None or self.__train_labels is None:
+            raise Exception("Training Data not fitted.")
+        if self.__test_features is None or self.__test_labels is None:
             raise Exception("Test data not inputted.")
 
         count = 0

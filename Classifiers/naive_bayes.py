@@ -24,13 +24,13 @@ class NaiveBayes:
         print("Naive Bayes Initiated Using using " + distribution + " distribution.\n")
 
     # Calculate probability using inputted distribution
-    def probability_function(self, x, mean, std):
+    def __probability_function(self, x, mean, std):
         # For now no other distributions implemented
         if self.__distribution:
             return gaussian_probability(x, mean, std)
 
     # Separate each class into a dataset
-    def separate_classes(self):
+    def __separate_classes(self):
         unique_labels = set(self.__train_labels)
         self.__class_sep_data = dict((class_name, []) for class_name in list(unique_labels))
         self.__class_prob = dict((class_name, 1) for class_name in list(unique_labels))
@@ -38,7 +38,7 @@ class NaiveBayes:
             self.__class_sep_data[row[1]].append(row[0])
 
     # Calculate mean and standard deviation for each attribute in each class
-    def summarize_data(self):
+    def __summarize_data(self):
         for key in self.__class_sep_data:
             summary_val = []
             for attr_vals in zip(*self.__class_sep_data[key]):
@@ -47,36 +47,36 @@ class NaiveBayes:
             self.__class_sep_data[key] = summary_val
 
     # Calculate probability of test sample being in each class and output class with largest prob. as prediction
-    def calculate_probabilities_and_predict(self):
+    def __calculate_probabilities_and_predict(self):
         for row in self.__test_features:
             prob_dict = self.__class_prob.copy()
             for key in self.__class_sep_data:
                 probabilities = self.__class_sep_data[key]
                 for val, prob in zip(row, probabilities):
-                    prob_dict[key] *= self.probability_function(val, prob[0], prob[1])
+                    prob_dict[key] *= self.__probability_function(val, prob[0], prob[1])
             self.__predictions.append(max(prob_dict.items(), key=operator.itemgetter(1))[0])
 
     # Fit the training data on to the model
     def fit(self, train_features, train_labels):
         self.__train_features, self.__train_labels = list(train_features), list(train_labels)
-        self.separate_classes()
-        self.summarize_data()
+        self.__separate_classes()
+        self.__summarize_data()
 
     # Run the prediction set-up and functions
     def predict(self, test_features, test_labels):
-        if not self.__train_features or not self.__train_labels:
+        if self.__train_features is None or self.__train_labels is None:
             raise Exception("Training Data not fitted.")
 
         self.__predictions = []
         self.__test_features, self.__test_labels = list(test_features), list(test_labels)
-        self.calculate_probabilities_and_predict()
+        self.__calculate_probabilities_and_predict()
         return self.__predictions
 
     # Output score which includes accuracy and confusion matrix
     def score(self):
-        if not self.__train_features or not self.__train_labels:
-            raise Exception("Training data not fitted.")
-        if not self.__test_labels or not self.__test_features:
+        if self.__train_features is None or self.__train_labels is None:
+            raise Exception("Training Data not fitted.")
+        if self.__test_features is None or self.__test_labels is None:
             raise Exception("Test data not inputted.")
 
         count = 0
