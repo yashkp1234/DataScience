@@ -3,18 +3,26 @@ from sklearn.model_selection import train_test_split
 from Classifiers.decision_tree import DecisionTree
 import ast
 import pandas as pd
+import matplotlib.pyplot as plt
 
-dt = DecisionTree(max_depth=2)
+dt = DecisionTree(max_depth=2, max_features="sqrt")
 iris = datasets.load_iris()
 features = iris.data
 target = [iris.target_names[int(target)] for target in iris.target]
 
 X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=9)
 
-dt.fit(X_train, y_train, ["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"])
+column_names = ["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"]
+
+dt.fit(X_train, y_train, column_names)
 dt.print_tree()
-dt.predict(X_test, y_test)
-dt.score()
+dt.predict(X_test)
+dt.score(y_test)
+
+df = dt.feature_importance()
+print(df.head())
+df.plot.barh(x='Features', y='Importance')
+plt.show()
 
 # Long dictionary copied from website to rename attributes in features
 dict = "{'cap-shape': {'b': 'bell', 'c': 'conical', 'x': 'convex', 'f': 'flat', 'k': 'knobbed', 's': 'sunken'}, " \
@@ -60,8 +68,13 @@ X_train, X_test, y_train, y_test = train_test_split(features.values, target.valu
 
 dt.fit(X_train, y_train, column_names)
 dt.print_tree()
-dt.predict(X_test, y_test)
-dt.score()
+dt.predict(X_test)
+dt.score(y_test)
+
+df = dt.feature_importance()
+print(df.head())
+df.plot.barh(x='Features', y='Importance')
+plt.show()
 
 """
 Results Below:

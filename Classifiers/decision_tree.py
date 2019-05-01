@@ -1,6 +1,7 @@
 import operator
 import pandas as pd
 import numpy as np
+from math import sqrt
 from re import match as re_match
 
 
@@ -61,7 +62,7 @@ def is_numeric(val):
 class DecisionTree:
 
     # Constructor
-    def __init__(self, max_depth=None, feature_names=None):
+    def __init__(self, max_depth=None, feature_names=None, min_sample_leaf=None, max_features="All"):
         self.__test_features = None
         self.__test_labels = None
         self.__train_features = None
@@ -70,8 +71,9 @@ class DecisionTree:
         self.__predictions = None
         self.__feature_names = feature_names
         self.__max_depth = max_depth
+        self.__min_sample_leaf = min_sample_leaf
+        self.__max_features = max_features
         self.__tree = None
-        print("Decision Tree initiated.\n")
 
     # Define a leaf class to contain final prediction values
     class Leaf:
@@ -136,6 +138,18 @@ class DecisionTree:
             else:
                 return "Is " + str(self.feature_names[self.index]) + " " + condition + " " + str(self.value) + "?"
 
+    def __feature_function(self):
+        if isinstance(self.__max_features, int):
+            assert(self.__max_features <= len(self.__train_features[0]))
+            return self.__max_features
+
+        if self.__max_features == "All":
+            return len(self.__train_features[0])
+        elif self.__max_features == "sqrt":
+            return int(sqrt(len(self.__train_features[0])))
+        else:
+            return len(self.__train_features[0])
+
     # Iterate over features and find best split using Gini Index
     def __find_best_split(self, data):
         if len(data) == 0:
@@ -144,9 +158,9 @@ class DecisionTree:
         uncertainty = gini_index(data)
         best_gain = 0
         best_question = None
-        num_feats = len(data[0]) - 1
+        num_feats = list(np.random.permutation(len(data[0]) - 1))[:self.__feature_function()]
 
-        for index in range(num_feats):
+        for index in num_feats:
             possible_values = set([row[index] for row in data])
 
             for val in possible_values:
@@ -167,7 +181,12 @@ class DecisionTree:
     def __build_tree(self, data, depth):
         question, gain = self.__find_best_split(data)
 
-        if gain == 0 or not gain or (self.__max_depth and depth == self.__max_depth):
+        # Booleans to stop splitting
+        info_gain_bool = gain == 0 or not gain
+        max_depth_bool = self.__max_depth and depth == self.__max_depth
+        min_sample_bool = self.__min_sample_leaf and len(data)/len(self.__train_data) <= self.__min_sample_leaf
+
+        if info_gain_bool or max_depth_bool or min_sample_bool:
             return self.Leaf(data)
 
         true_rows, false_rows = partition_function(data, question)
@@ -179,7 +198,9 @@ class DecisionTree:
 
     # Fit data
     def fit(self, train_feats, train_labels, feat_names=None):
-        self.__train_features, self.__train_labels, self.__feature_names = train_feats, train_labels, feat_names
+        if self.__feature_names is None:
+            self.__feature_names = feat_names
+        self.__train_features, self.__train_labels = train_feats, train_labels
         self.__train_data = [np.append(feats,[label]) for feats, label in zip(train_feats, train_labels)]
         self.__tree = self.__build_tree(self.__train_data, 0)
 
@@ -191,26 +212,65 @@ class DecisionTree:
         print("Decision Tree: \n" + str(self.__tree) + "\n")
 
     # Predict given input data
-    def predict(self, test_feats, test_labels):
+    def predict(self, test_feats):
         if self.__train_features is None or self.__train_labels is None:
             raise Exception("Training Data not fitted.")
 
-        self.__test_features, self.__test_labels = test_feats, test_labels
+        self.__test_features = test_feats
         self.__predictions = [self.__tree.classify(row) for row in test_feats]
         return self.__predictions
 
     # Score model
-    def score(self):
+    def score(self, test_labels, print_output=True):
         if self.__train_features is None or self.__train_labels is None:
             raise Exception("Training Data not fitted.")
-        if self.__test_features is None or self.__test_labels is None:
+        if self.__test_features is None:
             raise Exception("Test data not inputted.")
 
+        self.__test_labels = test_labels
         count = 0
         for prediction, result in zip(self.__predictions, self.__test_labels):
             if prediction == result:
                 count += 1
-        confusion_matrix = pd.crosstab(pd.Series(self.__predictions, name="Predicted"),
-                                       pd.Series(self.__test_labels, name="Actual"))
-        print("Accuracy: {0:.2f}%".format(count / len(self.__test_labels) * 100))
-        print(confusion_matrix, "\n")
+        if print_output:
+            confusion_matrix = pd.crosstab(pd.Series(self.__predictions, name="Predicted"),
+                                           pd.Series(self.__test_labels, name="Actual"))
+            print("Accuracy: {0:.2f}%".format(count / len(self.__test_labels) * 100))
+            print(confusion_matrix, "\n")
+        return count / len(self.__test_labels) * 100
+
+    def feature_importance(self):
+        if self.__test_features is None or self.__test_labels is None:
+            raise Exception("Test Data not fitted.")
+
+        og_train, og_test = self.__test_features, self.__test_labels
+        predictions = self.__predictions
+
+        self.predict(self.__test_features)
+        base_score = self.score(self.__test_labels, print_output=False)
+
+        results = []
+
+        for index in range(0, len(self.__test_features[0])):
+            self.__test_features = np.array(self.__test_features).T
+            self.__test_features[index] = \
+                self.__test_features[index][np.random.permutation(len(self.__test_features[0]))]
+            self.__test_features = self.__test_features.T
+            self.predict(self.__test_features)
+            new_score = base_score - self.score(self.__test_labels, print_output=False)
+            if new_score < 0:
+                new_score = 0
+            results.append(new_score)
+            self.__test_features, self.__test_labels = og_train, og_test
+
+        self.__predictions = predictions
+        if sum(results) == 0:
+            results = 0
+        else:
+            results = np.around(np.array(results) / sum(results) * 100, decimals=2)
+        feat_names = self.__feature_names
+        if self.__feature_names is None:
+            feat_names = range(0, len(og_train[0]))
+        return pd.DataFrame({"Features": feat_names, 'Importance': results}).\
+            sort_values(by='Importance', ascending=True).reset_index(drop=True)
+
