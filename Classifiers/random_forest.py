@@ -3,6 +3,8 @@ from math import sqrt
 import operator
 import pandas as pd
 from Classifiers.decision_tree import DecisionTree
+from multiprocessing import cpu_count
+from pathos.multiprocessing import ProcessingPool as Pool
 
 
 def unison_shuffled_copies(a, b):
@@ -39,15 +41,25 @@ class RandomForest:
         else:
             return len(self.__train_features[0])
 
-    def __build_forest(self):
+    def __build_forest(self, __=None):
         train_features, train_labels = unison_shuffled_copies(self.__train_features, self.__train_labels)
-        train_features = np.array_split(train_features, self.__n_estimators)
-        train_labels = np.array_split(train_labels, self.__n_estimators)
+        random_val = np.random.randint(int(0.5 * len(train_features)), len(train_features) - 1)
+        train_features = train_features[:random_val]
+        train_labels = train_labels[:random_val]
+        dt = DecisionTree(max_depth=self.__max_depth, feature_names=self.__feature_names,
+                          min_sample_leaf=self.__min_sample_leaf, max_features=self.__max_features)
+        dt.fit(np.array(train_features), np.array(train_labels))
+        return dt
 
-        for index in range(0, self.__n_estimators):
+    def __build_forest2(self, __=None):
+        for _ in range(self.__n_estimators):
+            train_features, train_labels = unison_shuffled_copies(self.__train_features, self.__train_labels)
+            random_val = np.random.randint(int(0.5 * len(train_features)), len(train_features) - 1)
+            train_features = train_features[:random_val]
+            train_labels = train_labels[:random_val]
             dt = DecisionTree(max_depth=self.__max_depth, feature_names=self.__feature_names,
                               min_sample_leaf=self.__min_sample_leaf, max_features=self.__max_features)
-            dt.fit(np.array(train_features[index]), np.array(train_labels[index]))
+            dt.fit(np.array(train_features), np.array(train_labels))
             self.__trees.append(dt)
 
     def __classify(self, row):
@@ -61,8 +73,13 @@ class RandomForest:
         return max(result_dict.items(), key=operator.itemgetter(1))[0]
 
     def fit(self, train_feats, train_labels, feat_names=None):
-        self.__train_features, self.__train_labels, self.__feature_names = train_feats, train_labels, feat_names
-        self.__build_forest()
+        if self.__feature_names is None:
+            self.__feature_names = feat_names
+        self.__train_features, self.__train_labels = train_feats, train_labels
+        #self.__build_forest2()
+        pool = Pool(cpu_count())
+        results = pool.amap(self.__build_forest, range(self.__n_estimators))
+        self.__trees = results.get()
 
     def predict(self, test_feats):
         if self.__train_features is None or self.__train_labels is None:

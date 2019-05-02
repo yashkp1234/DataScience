@@ -74,6 +74,7 @@ class DecisionTree:
         self.__min_sample_leaf = min_sample_leaf
         self.__max_features = max_features
         self.__tree = None
+        self.__base_score = None
 
     # Define a leaf class to contain final prediction values
     class Leaf:

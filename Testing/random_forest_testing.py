@@ -4,23 +4,24 @@ from Classifiers.random_forest import RandomForest
 import matplotlib.pyplot as plt
 import numpy as np
 
-np.random.seed(10)
+if __name__ == '__main__':
+    np.random.seed(10)
 
-iris = datasets.load_iris()
-features = iris.data
-target = [iris.target_names[int(target)] for target in iris.target]
+    iris = datasets.load_iris()
+    features = iris.data
+    target = [iris.target_names[int(target)] for target in iris.target]
 
-X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=9)
+    X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.33, random_state=9)
 
-rf = RandomForest(max_depth=2, max_features='All', n_estimators=10, min_sample_leaf=0.25)
-rf.fit(X_train, y_train, ["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"])
-rf.predict(X_test)
-rf.score(y_test)
-df = rf.feature_importance()
-print(df)
-df.plot.barh(x='Features', y='Importance')
-plt.show()
-rf.print_tree(3)
+    rf = RandomForest(max_depth=2, max_features='All', n_estimators=10, min_sample_leaf=0.25)
+    rf.fit(X_train, y_train, ["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"])
+    rf.predict(X_test)
+    rf.score(y_test)
+    df = rf.feature_importance()
+    print(df)
+    df.plot.barh(x='Features', y='Importance')
+    plt.show()
+    rf.print_tree(3)
 
 
 """

@@ -1,6 +1,8 @@
 from math import sqrt
 import operator
 import pandas as pd
+from multiprocessing import cpu_count
+from pathos.multiprocessing import ProcessingPool as Pool
 
 
 def euclidean_distance(x, y):
@@ -48,29 +50,30 @@ class KNearestNeighbours:
                   for row in zip(self.__train_labels, self.__train_features)]
         scores.sort(key=lambda x: x[0])
         self.__scores = scores
-        return self.__scores[:self.__k]
+        return get_prediction(self.__scores[:self.__k])
 
     # Fit the training data on to the model
     def fit(self, train_features, train_labels):
         self.__train_features, self.__train_labels = list(train_features), list(train_labels)
 
     # Predict results for inputted test samples
-    def predict(self, test_features, test_labels):
+    def predict(self, test_features):
         if self.__train_features is None or self.__train_labels is None:
             raise Exception("Training Data not fitted.")
 
-        self.__test_features, self.__test_labels = list(test_features), list(test_labels)
-        neighbours_list = [self.__k_nearest_neighbours(row) for row in self.__test_features]
-        self.__predictions = [get_prediction(neighbours) for neighbours in neighbours_list]
+        self.__test_features = list(test_features)
+        pool = Pool(cpu_count())
+        self.__predictions = pool.amap(self.__k_nearest_neighbours, self.__test_features).get()
         return self.__predictions
 
     # Output score which includes accuracy and confusion matrix
-    def score(self):
+    def score(self, test_labels):
         if self.__train_features is None or self.__train_labels is None:
             raise Exception("Training Data not fitted.")
-        if self.__test_features is None or self.__test_labels is None:
+        if self.__test_features is None:
             raise Exception("Test data not inputted.")
 
+        self.__test_labels = test_labels
         count = 0
         for prediction, result in zip(self.__predictions, self.__test_labels):
             if prediction == result:
@@ -79,6 +82,7 @@ class KNearestNeighbours:
                                        pd.Series(self.__test_labels, name="Actual"))
         print("Accuracy: {0:.2f}%".format(count / len(self.__test_labels) * 100))
         print(confusion_matrix, "\n")
+        return count / len(self.__test_labels) * 100
 
 
 
